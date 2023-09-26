@@ -100,7 +100,7 @@ const handleSubmit = async (e) => {
     if (imgArray.length > 0) {
       chatContainer.innerHTML += '<div>';
       for (let i = 0; i < imgArray.length; i++) {
-        var html = "<div class='upload__img-box'><div style='background-image: url(" + URL.createObjectURL(imgArray.at(i)) + ")' data-number='" + $(".upload__img-close").length + "' data-file='" + imgArray.at(i).name + "' class='img-bg'></div></div>";
+        var html = "<div class='chat'><div class='upload__img-box'><div style='background-image: url(" + URL.createObjectURL(imgArray.at(i)) + ")' data-number='" + $(".upload__img-close").length + "' data-file='" + imgArray.at(i).name + "' class='img-bg'></div></div></div>";
         chatContainer.innerHTML += html;
       }
       chatContainer.innerHTML += '</div>';
@@ -127,7 +127,7 @@ const handleSubmit = async (e) => {
   if (response) {
     const parsedData = response;
     const optionString = parsedData.slice(0, 7);
-    const responseMessage = parsedData.slice(7, parsedData.length - 1);
+    const responseMessage = parsedData.slice(7, parsedData.length);
     option = parseInt(optionString[optionString.length - 1]);
     
     let btn = $("#uploadbtn");
