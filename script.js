@@ -81,6 +81,21 @@ function chatStripe(isAi, value, uniqueId) {
   `;
 }
 
+function firstLoad() {
+  const uniqueId = generateUniqueId();
+  chatContainer.innerHTML += chatStripe(true, " ", uniqueId);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  const messageDiv = document.getElementById(uniqueId);
+
+  loader(messageDiv);
+
+  clearInterval(loadInterval);
+  messageDiv.innerHTML = "";
+
+  typeText(messageDiv, "Hi, How can I assist you today?");
+}
+
 const handleSubmit = async (e) => {
   e.preventDefault();
   
@@ -131,14 +146,19 @@ const handleSubmit = async (e) => {
     option = parseInt(optionString[optionString.length - 1]);
     
     let btn = $("#uploadbtn");
+    let chatField = $("#chatField");
+    let textArea = $("#textArea");
     switch (option) {
       case 0:
         btn.removeClass("enabled");
         btn.addClass("disabled");
         break;
       case 1:
+        textArea.blur();
         btn.removeClass("disabled");
         btn.addClass("enabled");
+        chatField.removeClass("enabled");
+        chatField.addClass("disabled");
         break;
       case 2:
         btn.removeClass("enabled");
@@ -167,6 +187,7 @@ function ImgUpload() {
       imgWrap = $(this).closest('.upload__box').find('.upload__img-wrap');
       var maxLength = $(this).attr('data-max_length');
 
+      let chatField = $("#chatField");
       var files = e.target.files;
       var filesArr = Array.prototype.slice.call(files);
       var iterator = 0;
@@ -188,6 +209,9 @@ function ImgUpload() {
           if (len > maxLength) {
             return false;
           } else {
+            chatField.removeClass("disabled");
+            chatField.addClass("enabled");
+            chatField.placeholder = 'Your Answer...';
             imgArray.push(f);
 
             var reader = new FileReader();
@@ -215,4 +239,5 @@ function ImgUpload() {
   });
 }
 
+firstLoad();
 ImgUpload();
