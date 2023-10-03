@@ -226,3 +226,11 @@ form img {
   pointer-events: all;
   opacity: 1;
 }
+
+.unshow {
+  display: none;
+}
+
+.show {
+  display: inline;
+}

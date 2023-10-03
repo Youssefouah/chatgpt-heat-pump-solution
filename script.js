@@ -6,6 +6,7 @@ const chatContainer = document.querySelector("#chat_container");
 let imgArray = [];
 let option = 0;
 let loadInterval;
+let isFirstLoading = true;
 
 async function query(data) {
   const response = await fetch(
@@ -49,12 +50,84 @@ function typeText(element, text) {
           var html = "<div class='upload__img-box'><div style='background-image: url(" + URL.createObjectURL(imgArray.at(i)) + ")' data-number='" + $(".upload__img-close").length + "' data-file='" + imgArray.at(i).name + "' class='img-bg'></div></div>";
           element.innerHTML += html;
         }
+        element.innerHTML += "<div id='summarizeBtnDiv' style='display: flex; gap:12px; flex-direction: column; width: 100%; margin-top: 12px'><div style='display: flex; gap: 12px'><button class='upload__btn' data-answer='All correct.'>All correct.</button><button class='upload__btn' data-answer='I have something to change.'>I have something to change.</button></div><div>"
+        let chatField = $("#chatField");
+        chatField.removeClass("enabled");
+        chatField.addClass("disabled");
+      }
+      if (option === 3) {
+        element.innerHTML += "<div id='entireBtnDiv' style='display: flex; gap:12px; flex-direction: column; width: 100%; margin-top: 12px'><div style='display: flex; gap: 12px'><button class='upload__btn' data-answer='Entire house'>Entire house</button><button class='upload__btn' data-answer='Not the entire house'>Not the entire house</button></div><div>"
+        let chatField = $("#chatField");
+        chatField.removeClass("enabled");
+        chatField.addClass("disabled");
+      }
+      if (isFirstLoading) {
+        // element.innerHTML += "<div style='display: flex; gap:12px; flex-direction: column; width: 100%; margin-top: 12px'><div style='display: flex; gap: 12px'><button class='upload__btn' data-answer='gas'>Gas</button><button class='upload__btn' data-answer='oil'>Oil</button><button class='upload__btn' data-answer='other'>Other</button></div><div><textarea id='textComment' style='background: #343541'></textarea></div></div>"
+        element.innerHTML += "<div id='curPumpBtnDiv' style='display: flex; gap:12px; flex-direction: column; width: 100%; margin-top: 12px'><div style='display: flex; gap: 12px'><button class='upload__btn' data-answer='gas'>Gas</button><button class='upload__btn' data-answer='oil'>Oil</button><button class='upload__btn' data-answer='other'>Other</button></div><div>"
       }
     }
   }, 20);
-
-
 }
+
+$('body').on('click', 'button', async function() {
+  if (isFirstLoading) {
+    isFirstLoading = false;
+    $('#curPumpBtnDiv').css("display", "none");
+    const answer = $(this).attr('data-answer');
+
+    const uniqueId = generateUniqueId();
+    let chatField = $("#chatField");
+    chatField.removeClass("disabled");
+    chatField.addClass("enabled");
+    chatContainer.innerHTML += chatStripe(true, " ", uniqueId);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+    const messageDiv = document.getElementById(uniqueId);
+    loader(messageDiv);
+    const resp = await query({question: "I use " + answer});
+    clearInterval(loadInterval);
+    messageDiv.innerHTML = "";
+    firstLoad(resp, uniqueId);
+  }
+  else if (option === 3) {
+    option = 0;
+    $('#entireBtnDiv').css("display", "none");
+    const answer = $(this).attr('data-answer');
+
+    const uniqueId = generateUniqueId();
+    let chatField = $("#chatField");
+    chatField.removeClass("disabled");
+    chatField.addClass("enabled");
+    chatContainer.innerHTML += chatStripe(true, " ", uniqueId);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+    const messageDiv = document.getElementById(uniqueId);
+    loader(messageDiv);
+    const resp = await query({question: answer + " is heated by it."});
+    clearInterval(loadInterval);
+    messageDiv.innerHTML = "";
+    firstLoad(resp, uniqueId);
+  }
+  if (option === 2) {
+    option = 0;
+    $('#summarizeBtnDiv').css("display", "none");
+    const answer = $(this).attr('data-answer');
+
+    const uniqueId = generateUniqueId();
+    let chatField = $("#chatField");
+    chatField.removeClass("disabled");
+    chatField.addClass("enabled");
+    chatContainer.innerHTML += chatStripe(true, " ", uniqueId);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+    const messageDiv = document.getElementById(uniqueId);
+    loader(messageDiv);
+    const resp = await query({question: answer});
+    clearInterval(loadInterval);
+    messageDiv.innerHTML = "";
+    firstLoad(resp, uniqueId);
+  }
+})
 
 function generateUniqueId() {
   const timestamp = Date.now();
@@ -81,19 +154,19 @@ function chatStripe(isAi, value, uniqueId) {
   `;
 }
 
-function firstLoad() {
-  const uniqueId = generateUniqueId();
-  chatContainer.innerHTML += chatStripe(true, " ", uniqueId);
-  chatContainer.scrollTop = chatContainer.scrollHeight;
-
+function firstLoad(resp, uniqueId) {
   const messageDiv = document.getElementById(uniqueId);
+  const parsedData = resp;
+  const optionString = parsedData.slice(0, 7);
+  const responseMessage = parsedData.slice(7, parsedData.length);
+  option = parseInt(optionString[optionString.length - 1]);
 
   loader(messageDiv);
 
   clearInterval(loadInterval);
   messageDiv.innerHTML = "";
 
-  typeText(messageDiv, "Hi, How can I assist you today?");
+  typeText(messageDiv, responseMessage);
 }
 
 const handleSubmit = async (e) => {
@@ -102,7 +175,10 @@ const handleSubmit = async (e) => {
   $(".upload__img-wrap").html("");
 
   const data = new FormData(form);
-  const prompt = data.get("prompt").trim();
+  let prompt = data.get("prompt").trim();
+
+  if(option === 1)
+    prompt = "These are the photos.";
 
   if (prompt === "") {
     form.reset();
@@ -110,8 +186,10 @@ const handleSubmit = async (e) => {
   }
 
   // user's chatstripe
-  chatContainer.innerHTML += chatStripe(false, prompt);
+  if(option !== 1)
+    chatContainer.innerHTML += chatStripe(false, prompt);
   if (option === 1) {
+    chatContainer.innerHTML += chatStripe(false, "Photos: ");
     if (imgArray.length > 0) {
       chatContainer.innerHTML += '<div>';
       for (let i = 0; i < imgArray.length; i++) {
@@ -133,7 +211,7 @@ const handleSubmit = async (e) => {
 
   loader(messageDiv);
 
-  const response = await query({"question": data.get("prompt")});
+  const response = await query({"question": prompt});
 
   clearInterval(loadInterval);
   // imgArray.splice(0);
@@ -144,25 +222,24 @@ const handleSubmit = async (e) => {
     const optionString = parsedData.slice(0, 7);
     const responseMessage = parsedData.slice(7, parsedData.length);
     option = parseInt(optionString[optionString.length - 1]);
-    
+    console.log("option", optionString, option);
     let btn = $("#uploadbtn");
     let chatField = $("#chatField");
     let textArea = $("#textArea");
     switch (option) {
-      case 0:
-        btn.removeClass("enabled");
-        btn.addClass("disabled");
-        break;
       case 1:
         textArea.blur();
-        btn.removeClass("disabled");
-        btn.addClass("enabled");
+        btn.removeClass("unshow");
+        btn.addClass("show");
         chatField.removeClass("enabled");
         chatField.addClass("disabled");
         break;
-      case 2:
-        btn.removeClass("enabled");
-        btn.addClass("disabled");
+      case 3:
+        textArea.blur();
+        chatField.removeClass("enabled");
+        chatField.addClass("disabled");
+        break;
+      default:
         break;
     }
 
@@ -179,6 +256,19 @@ form.addEventListener("keyup", (e) => {
   }
 });
 
+function SendImg(e) {
+  let chatField = $("#chatField");
+  let btn = $("#uploadbtn");
+  let btn1 = $("#sendImgBtn");
+  btn.removeClass("show");
+  btn.addClass("unshow");
+  btn1.removeClass("show");
+  btn1.addClass("unshow");
+  chatField.removeClass("disabled");
+  chatField.addClass("enabled");
+  handleSubmit(e);
+}
+
 function ImgUpload() {
   var imgWrap = "";
 
@@ -187,7 +277,7 @@ function ImgUpload() {
       imgWrap = $(this).closest('.upload__box').find('.upload__img-wrap');
       var maxLength = $(this).attr('data-max_length');
 
-      let chatField = $("#chatField");
+      let btn = $("#sendImgBtn");
       var files = e.target.files;
       var filesArr = Array.prototype.slice.call(files);
       var iterator = 0;
@@ -209,9 +299,8 @@ function ImgUpload() {
           if (len > maxLength) {
             return false;
           } else {
-            chatField.removeClass("disabled");
-            chatField.addClass("enabled");
-            chatField.placeholder = 'Your Answer...';
+            btn.removeClass("unshow");
+            btn.addClass("show");
             imgArray.push(f);
 
             var reader = new FileReader();
@@ -239,5 +328,17 @@ function ImgUpload() {
   });
 }
 
-firstLoad();
 ImgUpload();
+document.getElementById("sendImgBtn").addEventListener("click", SendImg);
+document.addEventListener('DOMContentLoaded', async function() {
+  const uniqueId = generateUniqueId();
+  chatContainer.innerHTML += chatStripe(true, " ", uniqueId);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  const messageDiv = document.getElementById(uniqueId);
+  loader(messageDiv);
+  const resp = await query({"question": "Hi, I need heat pump solution."});
+  clearInterval(loadInterval);
+  messageDiv.innerHTML = "";
+  firstLoad(resp, uniqueId);
+});

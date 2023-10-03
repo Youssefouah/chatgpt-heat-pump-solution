@@ -11,7 +11,7 @@
   <body>
     <div id="app">
       <div id="chat_container"></div>
-      <form id="chatField">
+      <form id="chatField" class="disabled">
         <textarea
           name="prompt"
           id="textArea"
@@ -23,10 +23,15 @@
         <button type="submit"><img src="assets/send.jpg" /></button>
       </form>
       <div class="upload__box">
-        <div id="uploadbtn" class="upload__btn-box disabled">
+        <div id="uploadbtn" class="upload__btn-box unshow">
           <label class="upload__btn">
-            <p>Upload images</p>
+            <p>Load images</p>
             <input type="file" multiple="" data-max_length="20" class="upload__inputfile">
+          </label>
+        </div>
+        <div id="sendImgBtn" class="upload__btn-box unshow">
+          <label class="upload__btn">
+            <p>Send images</p>
           </label>
         </div>
         <div class="upload__img-wrap"></div>
